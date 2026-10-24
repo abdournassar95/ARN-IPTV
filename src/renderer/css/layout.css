@@ -1,0 +1,1194 @@
+/* ==========================================================================
+   ARN IPTV Pro — 3-Column Resizable Desktop Layout & Player Chrome
+   Copyright © 2026 عبده رجب نصار — شركة ARN Technology
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 1. شريط العنوان المخصص لسطح المكتب (Titlebar) */
+.titlebar {
+  height: 44px;
+  background: rgba(7, 11, 20, 0.92);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  gap: 12px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.titlebar-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+}
+
+.titlebar-titles {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.brand-name {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.brand-pro {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--emerald), var(--sky));
+  color: #04131a;
+  font-weight: 800;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.titlebar-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-playlist-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  padding: 3px 8px;
+}
+
+.pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sky);
+  box-shadow: 0 0 8px var(--sky);
+}
+
+.pill-lbl {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.header-select {
+  border: none;
+  background: transparent;
+  padding: 2px 6px;
+  max-width: 230px;
+  font-size: 12px;
+}
+
+.btn-quick-add {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.38);
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-quick-add:hover {
+  background: var(--emerald);
+  color: #fff;
+}
+
+.engine-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #6ee7b7;
+}
+
+.status-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald);
+}
+
+.titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tb-tool-btn {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.tb-tool-btn:hover, .tb-tool-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: var(--sky);
+  color: #fff;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+}
+
+.win-btn {
+  width: 30px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+.win-btn:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #fff;
+}
+.win-btn.win-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* 2. الهيكل العام: الشريط الجانبي + منطقة الـ 3 أعمدة */
+.app-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  padding: 8px;
+  gap: 8px;
+}
+
+/* الشريط الجانبي (Sidebar) */
+.sidebar {
+  width: 76px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  flex-shrink: 0;
+}
+
+.logo-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  padding: 3px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(56, 189, 248, 0.24));
+  margin-bottom: 12px;
+}
+
+.app-logo {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.nav-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.nav-btn {
+  position: relative;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.nav-btn .icon {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.nav-btn .label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.nav-count {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.nav-btn:hover {
+  background: rgba(30, 41, 59, 0.7);
+  color: var(--text-primary);
+}
+
+.nav-btn.active {
+  background: linear-gradient(160deg, rgba(16, 185, 129, 0.22), rgba(56, 189, 248, 0.14));
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.15);
+}
+
+.nav-btn.active .nav-count {
+  color: #6ee7b7;
+}
+
+/* 3. منطقة الـ 3 أعمدة مع مقابض السحب (Main Content Splitter) */
+.main-content-splitter {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.categories-panel {
+  width: 235px;
+  min-width: 175px;
+  max-width: 360px;
+  flex-shrink: 0;
+}
+
+.channels-panel {
+  width: 350px;
+  min-width: 255px;
+  max-width: 580px;
+  flex-shrink: 0;
+}
+
+.splitter-handle {
+  width: 8px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splitter-handle::after {
+  content: "";
+  width: 2px;
+  height: 38px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.18);
+  transition: background 0.16s ease, height 0.16s ease;
+}
+
+.splitter-handle:hover::after,
+.splitter-handle.dragging::after {
+  background: var(--sky);
+  height: 64px;
+}
+
+/* وضع المسرح (Theater Mode) */
+body.theater-mode .categories-panel,
+body.theater-mode .channels-panel,
+body.theater-mode .splitter-handle {
+  display: none !important;
+}
+
+.scroll-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+}
+
+/* أدوات الفلترة والبحث في لوحة القنوات */
+.panel-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-mini-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-mini-danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.filter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ch-search-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.btn-clear-input {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+.btn-clear-input:hover {
+  color: #fff;
+}
+
+.btn-fav-filter {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.btn-fav-filter.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+}
+
+.quality-chips-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  gap: 8px;
+}
+
+.quality-chips {
+  display: flex;
+  gap: 5px;
+}
+
+.q-chip {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.q-chip.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: var(--sky);
+  color: #7dd3fc;
+}
+
+.view-mode-toggle {
+  display: flex;
+  gap: 3px;
+}
+
+.view-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 26px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.view-btn.active {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-primary);
+}
+
+/* محرك الـ Virtual Scroll لقائمة القنوات */
+.channels-viewport {
+  position: relative;
+  padding: 8px 10px;
+}
+
+.virtual-spacer {
+  position: relative;
+  width: 100%;
+}
+
+.channels-virtual-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.channels-virtual-content.grid-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.channels-virtual-content.grid-mode .channel-card {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 92px;
+  padding: 9px;
+}
+
+.channels-virtual-content.grid-mode .ch-top-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.empty-state-box {
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+.empty-state-box .empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* درج حلقات المسلسل */
+.series-drawer {
+  background: rgba(7, 11, 20, 0.85);
+  border-bottom: 1px solid var(--glass-border-bright);
+  padding: 10px 12px;
+  max-height: 215px;
+  overflow-y: auto;
+}
+.series-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.series-drawer-header h4 {
+  font-size: 13.5px;
+  color: var(--sky);
+}
+.series-plot {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.btn-icon-sm {
+  background: rgba(148, 163, 184, 0.14);
+  border: none;
+  color: var(--text-primary);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.ep-btn {
+  background: rgba(30, 41, 59, 0.72);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ep-btn:hover, .ep-btn.active {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: var(--emerald);
+  color: #fff;
+}
+
+/* 4. العمود الثالث: حاوية المشغل الاحترافي (Player Container) */
+.player-container {
+  flex: 1;
+  min-width: 380px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-glass);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(7, 11, 20, 0.55);
+  flex-wrap: wrap;
+}
+
+.now-playing-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 12px var(--emerald);
+  flex-shrink: 0;
+  animation: livePulse 1.6s infinite;
+}
+.live-dot.idle {
+  background: var(--text-muted);
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.86); }
+}
+
+.np-text-group {
+  min-width: 0;
+}
+
+.np-text-group h4 {
+  font-size: 14.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.np-sub-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1px;
+}
+
+.group-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sky);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.epg-snippet {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tech-stats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.server-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.source-lbl {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* منطقة الفيديو (Video Wrapper) */
+.video-wrapper {
+  flex: 1;
+  position: relative;
+  background: #02040a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 240px;
+}
+
+#videoPlayer {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  transition: aspect-ratio 0.2s ease;
+}
+
+/* أوضاع أبعاد الشاشة */
+#videoPlayer.ratio-16-9 {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: fill;
+}
+#videoPlayer.ratio-4-3 {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: fill;
+}
+#videoPlayer.ratio-21-9 {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: fill;
+}
+#videoPlayer.ratio-fill {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+/* شاشة الترحيب داخل المشغل قبل اختيار قناة */
+.player-idle-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.13), rgba(2, 4, 10, 0.96) 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 12;
+}
+
+.idle-card {
+  max-width: 470px;
+  text-align: center;
+  padding: 28px 26px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+.idle-logo {
+  width: 74px;
+  height: 74px;
+  border-radius: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.28);
+}
+
+.idle-card h2 {
+  font-size: 21px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.idle-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.idle-quick-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.idle-features-strip {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.idle-features-strip span {
+  background: rgba(7, 11, 20, 0.6);
+  padding: 3px 9px;
+  border-radius: 99px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.player-banner-toast {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #e0f2fe;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  z-index: 26;
+  pointer-events: none;
+}
+
+/* شريط التقدم الزمني VOD */
+.vod-timeline-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(7, 11, 20, 0.85);
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.vod-timeline-bar .mono-time {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  min-width: 44px;
+  text-align: center;
+}
+
+.seek-slider {
+  flex: 1;
+  accent-color: var(--sky);
+  height: 5px;
+  cursor: pointer;
+}
+
+/* شريط تحكم OSD السفلي */
+.osd-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: rgba(7, 11, 20, 0.78);
+  border-top: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+}
+
+.osd-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--glass-border);
+  margin: 0 2px;
+}
+
+.vol-slider {
+  width: 110px;
+  accent-color: var(--emerald);
+  cursor: pointer;
+}
+
+.vol-label-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 42px;
+  color: var(--emerald);
+}
+
+.osd-spacer {
+  flex: 1;
+}
+
+/* 5. تنسيقات النماذج داخل النوافذ المنبثقة */
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.form-hint code {
+  font-family: var(--font-mono);
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--sky);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input-with-btn {
+  display: flex;
+  gap: 8px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+
+.or-separator {
+  text-align: center;
+  margin: 14px 0;
+  position: relative;
+}
+.or-separator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--glass-border);
+}
+.or-separator span {
+  position: relative;
+  background: #0f172a;
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* شريط التقدم الموحد أثناء استيراد القوائم */
+.import-progress-box {
+  margin: 12px 20px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.imp-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.imp-bar-bg {
+  height: 7px;
+  background: rgba(7, 11, 20, 0.7);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.imp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--emerald), var(--sky));
+  transition: width 0.2s ease;
+}
+
+/* قائمة القوائم المحفوظة */
+.saved-playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.saved-pl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 11px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--glass-border);
+}
+.saved-pl-item.active {
+  border-color: var(--emerald);
+  background: rgba(16, 185, 129, 0.12);
+}
+.saved-pl-meta h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.saved-pl-meta p {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.saved-pl-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.modal-utility-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* الإعدادات والاختصارات وحول التطبيق */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+.setting-row p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sys-diagnostics-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: rgba(7, 11, 20, 0.65);
+  border: 1px solid var(--glass-border);
+}
+.sys-diagnostics-box h4 {
+  font-size: 13px;
+  color: var(--sky);
+  margin-bottom: 8px;
+}
+.diag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  font-size: 12px;
+}
+.diag-cell {
+  background: rgba(15, 23, 42, 0.7);
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+.diag-cell span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.sc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: rgba(30, 41, 59, 0.48);
+  border: 1px solid var(--glass-border);
+  font-size: 12.5px;
+}
+.sc-item kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: #070b14;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--sky);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.about-body {
+  text-align: center;
+}
+.about-logo {
+  width: 78px;
+  height: 78px;
+  border-radius: 18px;
+  margin-bottom: 10px;
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.3);
+}
+.version-pill {
+  display: inline-block;
+  margin: 4px 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 3px 11px;
+  border-radius: 99px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--sky);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.about-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.developer-card {
+  text-align: right;
+  background: rgba(7, 11, 20, 0.65);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.dev-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.1);
+  font-size: 12.5px;
+}
+.dev-row:last-child {
+  border-bottom: none;
+}
+.dev-lbl {
+  color: var(--text-secondary);
+}
+.social-links-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-social {
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.16s ease;
+}
+.btn-social:hover {
+  border-color: var(--emerald);
+  background: rgba(16, 185, 129, 0.18);
+}
+
+/* وضع ملء الشاشة للفيديو */
+.video-wrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}
+
+/* التجاوب مع الشاشات الأصغر */
+@media (max-width: 1120px) {
+  .categories-panel { width: 190px; }
+  .channels-panel { width: 280px; }
+  .brand-sub, .tb-btn-txt { display: none; }
+}

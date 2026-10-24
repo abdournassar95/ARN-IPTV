@@ -595,7 +595,6 @@ wrapper.addEventListener('wheel', (e) => {
 * `M`: كتم أو إعادة تشغيل الصوت.
 * `ArrowRight` / `ArrowLeft`: تقديم / تأخير البث 10 ثوانٍ.
 * `ArrowUp` / `ArrowDown`: زيادة / خفض مستوى الصوت بنسبة 5%.
-```
 
 ---
 
@@ -647,24 +646,24 @@ contextBridge.exposeInMainWorld('api', {
 
 ## 🗓️ 10. جدول مراحل التنفيذ المقترح (Roadmap Checklist)
 
-- [ ] **المرحلة 1: تجهيز بيئة العمل (Setup)**
-  - تهيئة مستودع Node.js وتثبيت حزم `electron`, `better-sqlite3`, `axios`.
-  - تجهيز هيكل المجلدات والأيقونات الرسمية وخط Cairo.
-- [ ] **المرحلة 2: نقل المحرك الخلفي (Core Migration)**
+- [x] **المرحلة 1: تجهيز بيئة العمل (Setup)**
+  - تهيئة مستودع Node.js وتثبيت حزم `electron`, `better-sqlite3`, `axios`, `hls.js`.
+  - تجهيز هيكل المجلدات والأيقونات الرسمية وخط Cairo و JetBrains Mono المدمجين محلياً.
+- [x] **المرحلة 2: نقل المحرك الخلفي (Core Migration)**
   - إنشاء `fg_engine.js` واختبار التشفير بـ AES-128 ودعم endpoints دراما لايف v187.
-  - تشغيل `stream_proxy.js` والتأكد من استجابته لـ `/ping` ومعالجة إزالة بادئة `k9x_` swap.
-- [ ] **المرحلة 3: بناء الواجهة بنظام 3 أعمدة (UI Implementation)**
-  - برمجة `index.html` و `layout.css` و `glassmorphism.css`.
-  - دمج مشغل `hls.js` وتوصيله بروابط البروكسي `http://127.0.0.1:39871/live/:id`.
+  - تشغيل `stream_proxy.js` والتأكد من استجابته لـ `/ping` و `/subplaylist` ومعالجة إزالة بادئة `k9x_` swap وتمرير ترويسات البث.
+- [x] **المرحلة 3: بناء الواجهة بنظام 3 أعمدة (UI Implementation)**
+  - برمجة `index.html` و `layout.css` و `glassmorphism.css` مع شريط عنوان مخصص ومقسمات أعمدة قابلة للسحب ووضع المسرح.
+  - دمج مشغل `hls.js` محلياً وتوصيله بروابط البروكسي `http://127.0.0.1:39871/live/:id`.
   - تفعيل محرك تعدد السيرفرات مع الانتقال التلقائي عند الأعطال (Auto-Failover).
   - تفعيل قائمة اختيار الجودة (Adaptive HLS Levels من 360p حتى 4K).
   - تفعيل إيماءات المشغل: النقر المزدوج لملء الشاشة، وعجلة الماوس لتضخيم الصوت حتى 200%، ومؤشر OSD العائم.
-- [ ] **المرحلة 4: قاعدة البيانات وإدارة الحالة (Data & State)**
-  - إنشاء جداول SQLite وتجهيز فهارس الاستعلام السريع لتحمل 50,000+ قناة.
-  - ربط شريط البحث اللحظي وفلاتر الفئات والمفضلة.
-- [ ] **المرحلة 5: التجميع النهائي والتوثيق (Build & Sign)**
-  - بناء ملف `.exe` عبر `electron-builder` أو `Inno Setup`.
-  - ختم الملف التنفيذي بشهادة ARN Technology وطابع DigiCert الزمني وتصديره.
+- [x] **المرحلة 4: قاعدة البيانات وإدارة الحالة (Data & State)**
+  - إنشاء جداول SQLite (`better-sqlite3` WAL) وتجهيز فهارس الاستعلام السريع ومحرّك Virtual Scroll لتحمل 50,000+ قناة بسلاسة 60fps.
+  - ربط شريط البحث اللحظي الداعم لتطبيع الحروف العربية وفلاتر الفئات والجودة والمفضلة وسجل المشاهدة ودعم M3U و Xtream Codes.
+- [x] **المرحلة 5: التجميع النهائي والتوثيق (Build & Sign)**
+  - تجهيز إعدادات البناء عبر `electron-builder` و `build/installer.iss` لـ `Inno Setup` ومشغلات `Run-DesktopApp.bat` و `Run-DesktopApp.ps1`.
+  - تجهيز سكريبت التوقيع الرقمي `build/Sign-Package.ps1` بشهادة ARN Technology وطابع DigiCert الزمني RFC-3161 SHA-256.
 
 ---
 
