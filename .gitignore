@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build & Packaging Outputs
+dist/
+out/
+release/
+build/*.exe
+
+# Runtime Databases & Logs
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+logs/
+*.log
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+Unselected files/

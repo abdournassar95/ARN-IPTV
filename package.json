@@ -1,0 +1,87 @@
+{
+  "name": "arn-iptv-desktop",
+  "productName": "ARN IPTV Pro",
+  "version": "2.0.0",
+  "description": "ARN IPTV Desktop (Electron Edition) — مشغل IPTV احترافي فائق السرعة بنمط Dark Glassmorphism ومحرك فك تشفير وبروكسي مدمج",
+  "main": "src/main/main.js",
+  "author": {
+    "name": "عبده رجب نصار — شركة ARN Technology",
+    "url": "https://github.com/abdournassar95"
+  },
+  "license": "Proprietary",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "preview": "node src/server/web_preview.js",
+    "test": "node tests/run_tests.js",
+    "sync-assets": "node scripts/sync-assets.js",
+    "rebuild:electron": "electron-builder install-app-deps",
+    "dist:dir": "electron-builder --win --dir",
+    "dist": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "better-sqlite3": "^11.8.1",
+    "hls.js": "^1.5.20"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.arntechnology.arniptv",
+    "productName": "ARN IPTV Pro",
+    "copyright": "Copyright © 2026 عبده رجب نصار — شركة ARN Technology",
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node",
+      "src/renderer/assets/demo/**/*"
+    ],
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ARN IPTV Pro",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "linux": {
+      "icon": "src/renderer/assets/icons/app_icon.png",
+      "category": "AudioVideo",
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}
