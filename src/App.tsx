@@ -14,7 +14,7 @@ import {
   Play,
   X,
   ChevronDown,
-  Sparkles,
+  Moon,
 } from 'lucide-react';
 import {
   CategoryItem,
@@ -28,6 +28,7 @@ import { PlaylistModal } from './components/PlaylistModal';
 import { AboutModal } from './components/AboutModal';
 import { SplashScreen } from './components/SplashScreen';
 import { getCategoryVisual } from './utils/iptvIcons';
+import { loadCatalogFromIdb, saveCatalogToIdb } from './utils/catalogStorage';
 import { ARABIC_RADIO_CATEGORIES, ARABIC_RADIO_CHANNELS } from './server/arabicRadioCatalog';
 import { getEgyptianChannels } from './server/egyptCatalog';
 
@@ -38,6 +39,7 @@ const STORAGE_KEYS = {
   CUSTOM_PLAYLISTS: 'arn_iptv_clean_v5_playlists',
   CUSTOM_CATEGORIES: 'arn_iptv_clean_v5_categories',
   CUSTOM_CHANNELS: 'arn_iptv_clean_v5_channels',
+  DEEP_BLACK_OLED: 'arn_iptv_deep_black_oled',
 };
 
 export default function App() {
@@ -148,6 +150,53 @@ export default function App() {
     }
   });
   const [hasAutoOpenedEgypt, setHasAutoOpenedEgypt] = useState<boolean>(false);
+
+  // True Night Mode / OLED Deep Black Mode (#000000) state
+  const [isDeepBlackMode, setIsDeepBlackMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.DEEP_BLACK_OLED) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('oled-black', isDeepBlackMode);
+    try {
+      localStorage.setItem(STORAGE_KEYS.DEEP_BLACK_OLED, isDeepBlackMode ? 'true' : 'false');
+    } catch {}
+  }, [isDeepBlackMode]);
+
+  const toggleDeepBlackMode = () => {
+    setIsDeepBlackMode((prev) => !prev);
+  };
+
+  // Hydrate full catalog from IndexedDB on startup (restores >1,000 channels if stored)
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      loadCatalogFromIdb<PlaylistSource>('playlists'),
+      loadCatalogFromIdb<CategoryItem>('categories'),
+      loadCatalogFromIdb<ChannelItem>('channels'),
+    ])
+      .then(([idbPlaylists, idbCategories, idbChannels]) => {
+        if (!active) return;
+        if (idbPlaylists && idbPlaylists.length > 0) {
+          setPlaylists(idbPlaylists);
+          setActivePlaylistId((prev) => prev || idbPlaylists[0].id);
+        }
+        if (idbCategories && idbCategories.length > 0) {
+          setCategories(idbCategories);
+        }
+        if (idbChannels && idbChannels.length > 0) {
+          setChannels((prev) => (idbChannels.length >= prev.length ? idbChannels : prev));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Automatically show input modal on first run or when database is empty
   useEffect(() => {
@@ -396,6 +445,7 @@ export default function App() {
       try {
         localStorage.setItem(STORAGE_KEYS.CUSTOM_PLAYLISTS, JSON.stringify(updated));
       } catch {}
+      saveCatalogToIdb('playlists', updated);
       return updated;
     });
 
@@ -405,6 +455,7 @@ export default function App() {
       try {
         localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(updated));
       } catch {}
+      saveCatalogToIdb('categories', updated);
       return updated;
     });
 
@@ -414,6 +465,7 @@ export default function App() {
       try {
         localStorage.setItem(STORAGE_KEYS.CUSTOM_CHANNELS, JSON.stringify(updated.slice(0, 1000)));
       } catch {}
+      saveCatalogToIdb('channels', updated);
       return updated;
     });
 
@@ -457,6 +509,7 @@ export default function App() {
       try {
         localStorage.setItem(STORAGE_KEYS.CUSTOM_PLAYLISTS, JSON.stringify(updated));
       } catch {}
+      saveCatalogToIdb('playlists', updated);
       return updated;
     });
     setCategories((prev) => {
@@ -464,13 +517,15 @@ export default function App() {
       try {
         localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(updated));
       } catch {}
+      saveCatalogToIdb('categories', updated);
       return updated;
     });
     setChannels((prev) => {
       const updated = prev.filter((ch) => ch.playlistId !== playlistId);
       try {
-        localStorage.setItem(STORAGE_KEYS.CUSTOM_CHANNELS, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEYS.CUSTOM_CHANNELS, JSON.stringify(updated.slice(0, 1000)));
       } catch {}
+      saveCatalogToIdb('channels', updated);
       return updated;
     });
 
@@ -640,55 +695,75 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#070b14] text-slate-100 select-none">
-      {/* Top Header: Clean, strictly App Brand on one side and About button on the other side */}
-      <header className="flex items-center justify-between px-5 py-2.5 bg-[#0a101f]/95 border-b border-white/8 shrink-0">
-        {/* App Brand & Logo with new light 3D TV Icon */}
+      {/* Top Header: Clean 1-row Apple TV / B&O Top Bar Contract */}
+      <header className="flex items-center justify-between gap-8 px-5 py-2.5 bg-[#0a101f]/90 backdrop-blur-xl border-b border-white/[0.06] shrink-0">
+        {/* Zone 1: Clean Single-Line Brand Wordmark & Anodized Icon */}
         <div
           onClick={() => setIsSplashOpen(true)}
-          className="flex items-center gap-2.5 cursor-pointer group"
-          title="عرض شاشة البداية والترحيب التفاعلية (Splash Screen)"
+          className="flex items-center gap-2.5 cursor-pointer group shrink-0"
+          title="عرض شاشة البداية والترحيب التفاعلية"
         >
-          <div className="w-8 h-8 rounded-xl p-0.5 bg-linear-to-tr from-cyan-400 via-teal-300 to-emerald-400 shadow-md shadow-cyan-500/25 group-hover:shadow-cyan-400/40 transition-all">
+          <div className="w-7 h-7 rounded-lg p-1 bg-white/[0.04] border border-white/[0.08] group-hover:border-white/[0.18] transition-colors flex items-center justify-center">
             <img
               src="/assets/icons/app_icon.png"
               alt="ARN"
-              className="w-full h-full object-contain rounded-[10px]"
+              className="w-full h-full object-contain rounded-[6px]"
               onError={(e) => {
                 (e.currentTarget as HTMLElement).style.display = 'none';
               }}
             />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-black tracking-tight text-white whitespace-nowrap group-hover:text-cyan-300 transition-colors">
-              ARN IPTV Pro
-            </span>
-            <span className="text-[10px] text-emerald-400 font-semibold leading-none">
-              ARN Technology
-            </span>
-          </div>
+          <span className="text-sm font-bold tracking-tight text-slate-100 whitespace-nowrap group-hover:text-white transition-colors">
+            ARN IPTV Pro
+          </span>
         </div>
 
-        {/* Header Action Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Zone 3: Primary Workspace Controls (Single-Line, No Decorative Clutter) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Deep Black Mode (OLED True Night Mode) Quick Toggle Switch */}
+          <button
+            id="btnDeepBlackToggle"
+            type="button"
+            role="switch"
+            aria-checked={isDeepBlackMode}
+            onClick={toggleDeepBlackMode}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${
+              isDeepBlackMode
+                ? 'bg-white/[0.08] text-white border-white/20'
+                : 'text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.07] border-white/[0.07]'
+            }`}
+            title="تفعيل أو إيقاف الوضع الليلي الحقيقي (Deep Black Mode) لتقليل استهلاك الطاقة على شاشات OLED وراحة العين"
+          >
+            <Moon className={`w-3.5 h-3.5 ${isDeepBlackMode ? 'text-emerald-400 fill-current' : 'text-slate-400'}`} />
+            <span className="hidden md:inline">الوضع الليلي الحقيقي</span>
+            <span
+              className={`w-7 h-4 rounded-full p-0.5 flex items-center transition-colors ${
+                isDeepBlackMode ? 'bg-emerald-500 justify-start' : 'bg-white/15 justify-end'
+              }`}
+            >
+              <span className="w-3 h-3 rounded-full bg-white shadow-xs" />
+            </span>
+          </button>
+
           {/* Interactive Splash Screen Trigger Button */}
           <button
             type="button"
             onClick={() => setIsSplashOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             title="عرض شاشة البداية والترحيب التفاعلية"
           >
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="hidden sm:inline">شاشة البداية</span>
+            <Tv className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">شاشة الترحيب</span>
           </button>
 
           {/* About Button */}
           <button
             type="button"
             onClick={() => setIsAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             title="حول البرنامج وحقوق الملكية"
           >
-            <Info className="w-4 h-4 text-emerald-400" />
+            <Info className="w-3.5 h-3.5 text-slate-400" />
             <span>حول البرنامج</span>
           </button>
         </div>
@@ -696,124 +771,124 @@ export default function App() {
 
       {/* Main Workspace */}
       <div className="flex-1 flex min-h-0 overflow-hidden p-2.5 gap-2.5 relative">
-        {/* Slim Sidebar (Navigation & Controls) */}
-        <aside className="w-20 bg-[#0f172a]/90 border border-white/8 rounded-xl flex flex-col items-center justify-between py-3 shrink-0">
-          <div className="flex flex-col items-center gap-1.5 w-full px-1.5">
+        {/* Tactile Navigation Rail (Apple TV / B&O Minimal Sidebar) */}
+        <aside className="w-20 bg-[#0f172a]/75 backdrop-blur-xl border border-white/[0.06] rounded-2xl flex flex-col items-center justify-between py-3 shrink-0">
+          <div className="flex flex-col items-center gap-1 w-full px-1.5">
             <button
               type="button"
               onClick={() => setActiveSection('live')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'live'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <Tv className="w-4 h-4" />
-              <span className="whitespace-nowrap">البث</span>
+              <Tv className={`w-4 h-4 ${activeSection === 'live' ? 'text-emerald-400' : ''}`} />
+              <span>البث</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSection('radio')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'radio'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <Radio className="w-4 h-4" />
-              <span className="whitespace-nowrap">الراديو</span>
+              <Radio className={`w-4 h-4 ${activeSection === 'radio' ? 'text-emerald-400' : ''}`} />
+              <span>الراديو</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSection('movies')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'movies'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <Film className="w-4 h-4" />
-              <span className="whitespace-nowrap">الأفلام</span>
+              <Film className={`w-4 h-4 ${activeSection === 'movies' ? 'text-emerald-400' : ''}`} />
+              <span>الأفلام</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSection('series')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'series'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <Layers className="w-4 h-4" />
-              <span className="whitespace-nowrap">المسلسلات</span>
+              <Layers className={`w-4 h-4 ${activeSection === 'series' ? 'text-emerald-400' : ''}`} />
+              <span>المسلسلات</span>
             </button>
 
             {/* Categories Fold / Expand Button */}
             <button
               type="button"
               onClick={() => setIsCategoriesOpen((prev) => !prev)}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 isCategoriesOpen
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.11] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
               title="عرض أو إخفاء قائمة التصنيفات"
             >
-              <FolderOpen className="w-4 h-4" />
-              <span className="whitespace-nowrap">التصنيفات</span>
+              <FolderOpen className={`w-4 h-4 ${isCategoriesOpen ? 'text-emerald-400' : ''}`} />
+              <span>التصنيفات</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSection('fav')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'fav'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <Star className="w-4 h-4" />
-              <span className="whitespace-nowrap">المفضلة</span>
+              <Star className={`w-4 h-4 ${activeSection === 'fav' ? 'text-emerald-400' : ''}`} />
+              <span>المفضلة</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSection('history')}
-              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+              className={`w-full flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 activeSection === 'history'
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  ? 'bg-white/[0.09] text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
-              <History className="w-4 h-4" />
-              <span className="whitespace-nowrap">الأخيرة</span>
+              <History className={`w-4 h-4 ${activeSection === 'history' ? 'text-emerald-400' : ''}`} />
+              <span>الأخيرة</span>
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-1.5 w-full px-1.5 pt-2 border-t border-white/8">
+          <div className="flex flex-col items-center gap-1 w-full px-1.5 pt-2 border-t border-white/[0.06]">
             <button
               id="btnPlaylists"
               type="button"
               onClick={() => setIsPlaylistModalOpen(true)}
-              className="w-full flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[11px] font-semibold text-slate-300 hover:text-emerald-400 hover:bg-white/5 transition-colors cursor-pointer"
+              className="w-full flex flex-col items-center gap-1 py-2 px-1 rounded-[10px] text-[11px] font-semibold text-slate-300 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer whitespace-nowrap"
               title="إدارة القوائم وأكواد FG"
             >
-              <ListPlus className="w-4 h-4" />
-              <span className="whitespace-nowrap">القوائم</span>
+              <ListPlus className="w-4 h-4 text-emerald-400" />
+              <span>القوائم</span>
             </button>
 
             <button
               id="btnAbout"
               type="button"
               onClick={() => setIsAboutModalOpen(true)}
-              className="w-full flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[11px] font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="w-full flex flex-col items-center gap-1 py-2 px-1 rounded-[10px] text-[11px] font-semibold text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer whitespace-nowrap"
               title="حول البرنامج"
             >
               <Info className="w-4 h-4" />
-              <span className="whitespace-nowrap">حول</span>
+              <span>حول</span>
             </button>
           </div>
         </aside>
@@ -968,20 +1043,19 @@ export default function App() {
           </section>
         )}
 
-        {/* Channels List Panel */}
-        <section className="w-80 lg:w-96 bg-[#0f172a]/85 border border-white/8 rounded-xl flex flex-col overflow-hidden shrink-0">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8">
+        {/* Channels List Panel (Apple TV / B&O Seamless Editorial List) */}
+        <section className="w-80 lg:w-96 bg-[#0f172a]/75 backdrop-blur-xl border border-white/[0.06] rounded-2xl flex flex-col overflow-hidden shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
             {/* Current Category & Toggle Categories Button */}
             <div className="flex items-center gap-2 min-w-0">
-              <Radio className="w-4 h-4 text-sky-400 shrink-0" />
               <button
                 type="button"
                 onClick={() => setIsCategoriesOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white truncate transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-semibold text-slate-100 truncate transition-colors cursor-pointer"
                 title="اضغط لاختيار تصنيف آخر"
               >
-                <span className="truncate max-w-32.5">{currentCategoryTitle}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="truncate max-w-36">{currentCategoryTitle}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
             </div>
             <span id="chCountBadge" className="text-xs font-mono text-slate-400 tabular-nums shrink-0">
@@ -990,7 +1064,7 @@ export default function App() {
           </div>
 
           {/* Search & Favorites Filter Toolbar */}
-          <div className="p-2.5 border-b border-white/8 flex items-center gap-2">
+          <div className="p-2.5 border-b border-white/[0.06] flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -999,7 +1073,7 @@ export default function App() {
                 value={chSearch}
                 onChange={(e) => setChSearch(e.target.value)}
                 placeholder={activeSection === 'radio' ? 'ابحث عن إذاعة راديو...' : 'ابحث عن قناة...'}
-                className="w-full bg-[#070b14] border border-white/10 rounded-lg pr-8 pl-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60"
+                className="w-full bg-[#070b14]/80 border border-white/[0.07] rounded-lg pr-8 pl-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-white/25 transition-colors"
               />
             </div>
             <button
@@ -1008,20 +1082,20 @@ export default function App() {
               onClick={() => setOnlyFavFilter((prev) => !prev)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 onlyFavFilter
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-[#070b14] border-white/10 text-slate-300 hover:text-white'
+                  ? 'bg-white/[0.1] border-white/20 text-amber-300'
+                  : 'bg-[#070b14]/80 border-white/[0.07] text-slate-400 hover:text-slate-200'
               }`}
             >
               ★ المفضلة
             </button>
           </div>
 
-          {/* Channels Scroll List */}
-          <div id="channelsList" className="flex-1 overflow-y-auto p-2 space-y-1.5">
+          {/* Channels Scroll List (Borderless Seamless Rows) */}
+          <div id="channelsList" className="flex-1 overflow-y-auto p-2 space-y-0.5">
             {loadingCategoryId === selectedCategoryId ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-300 space-y-3">
-                <div className="w-7 h-7 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-bold text-emerald-300">
+                <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-semibold text-slate-200">
                   جاري جلب قنوات «{currentCategoryTitle}» الحية...
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -1030,15 +1104,15 @@ export default function App() {
               </div>
             ) : playlists.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-3">
-                <Radio className="w-10 h-10 text-slate-600" />
-                <p className="text-xs font-bold text-slate-200">التطبيق نظيف وجاهز للتشغيل</p>
+                <Radio className="w-9 h-9 text-slate-600" />
+                <p className="text-xs font-semibold text-slate-200">التطبيق نظيف وجاهز للتشغيل</p>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   أدخل كود دراما لايف (FG Code) أو أضف رابط قائمة M3U لبدء تحميل القنوات.
                 </p>
                 <button
                   type="button"
                   onClick={() => setIsPlaylistModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer shadow-md shadow-emerald-500/20"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer"
                 >
                   إضافة كود أو قائمة تشغيل
                 </button>
@@ -1054,7 +1128,7 @@ export default function App() {
                     setOnlyFavFilter(false);
                     setSelectedCategoryId('ALL');
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/25 cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white/[0.06] text-slate-200 text-xs font-semibold hover:bg-white/[0.1] cursor-pointer"
                 >
                   إعادة ضبط الفلاتر
                 </button>
@@ -1069,26 +1143,26 @@ export default function App() {
                   <div
                     key={ch.id}
                     onClick={() => setActiveChannel(ch)}
-                    className={`group flex items-center justify-between gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`group flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-[10px] cursor-pointer transition-colors duration-150 ${
                       isPlayingNow
-                        ? 'bg-emerald-500/15 border-emerald-500/45 shadow-sm'
-                        : 'bg-[#070b14]/60 border-white/6 hover:border-white/15 hover:bg-white/5'
+                        ? 'bg-white/[0.09] text-white'
+                        : 'hover:bg-white/[0.04] text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {/* Channel Number / Play Indicator */}
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold tabular-nums shrink-0 ${
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums shrink-0 transition-colors ${
                           isPlayingNow
-                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                            : 'bg-[#0f172a] text-slate-400 group-hover:text-white'
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'text-slate-500 group-hover:text-slate-300'
                         }`}
                       >
-                        {isPlayingNow ? <Play className="w-3.5 h-3.5 fill-current" /> : idx + 1}
+                        {isPlayingNow ? <Play className="w-3 h-3 fill-current" /> : idx + 1}
                       </div>
 
                       {/* Channel Logo / Icon */}
-                      <div className="w-10 h-10 rounded-lg bg-black/50 border border-white/10 flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-sm relative group-hover:border-emerald-500/30 transition-colors">
+                      <div className="w-9 h-9 rounded-lg bg-black/40 border border-white/[0.07] flex items-center justify-center p-1 overflow-hidden shrink-0 relative">
                         {ch.logo ? (
                           <img
                             src={ch.logo}
@@ -1110,21 +1184,24 @@ export default function App() {
                           }`}
                         >
                           {ch.section === 'radio' ? (
-                            <Radio className="w-4 h-4 text-emerald-400" />
+                            <Radio className="w-4 h-4 text-slate-400" />
                           ) : (
-                            <Tv className="w-4 h-4 text-emerald-400/70" />
+                            <Tv className="w-4 h-4 text-slate-400" />
                           )}
                         </div>
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-slate-100 truncate">{ch.name}</div>
+                        <div className={`text-xs font-semibold truncate ${isPlayingNow ? 'text-white' : 'text-slate-200'}`}>
+                          {ch.name}
+                        </div>
+                        {/* Zero-Pill Unboxed Metadata with Typographic Separators */}
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 truncate mt-0.5">
                           <span className="truncate">{ch.groupTitle}</span>
                           {ch.resolution && (
                             <>
                               <span aria-hidden="true">·</span>
-                              <span className="font-mono text-sky-400 tabular-nums" dir="ltr">
+                              <span className="font-mono text-slate-300 tabular-nums" dir="ltr">
                                 {ch.resolution}
                               </span>
                             </>
@@ -1134,10 +1211,7 @@ export default function App() {
                           {hasProxyK9x && (
                             <>
                               <span aria-hidden="true">·</span>
-                              <span className="inline-flex items-center gap-0.5 text-emerald-400 font-mono">
-                                <ShieldCheck className="w-3 h-3" />
-                                FG
-                              </span>
+                              <span className="font-mono text-emerald-400/90">FG</span>
                             </>
                           )}
                         </div>
@@ -1153,12 +1227,12 @@ export default function App() {
                       }}
                       className={`p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer ${
                         isFav
-                          ? 'text-amber-400 hover:bg-amber-500/15'
-                          : 'text-slate-500 hover:text-slate-300 hover:bg-white/8'
+                          ? 'text-amber-400 hover:bg-white/[0.06]'
+                          : 'text-slate-600 opacity-0 group-hover:opacity-100 hover:text-slate-300 hover:bg-white/[0.06]'
                       }`}
                       title={isFav ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
                     >
-                      <Star className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                      <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 );
@@ -1192,6 +1266,8 @@ export default function App() {
         }}
         onDeletePlaylist={handleDeletePlaylist}
         onImportSuccess={handleImportSuccess}
+        isDeepBlackMode={isDeepBlackMode}
+        onToggleDeepBlackMode={toggleDeepBlackMode}
       />
 
       <AboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />

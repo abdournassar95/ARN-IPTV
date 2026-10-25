@@ -40,6 +40,8 @@ export function decryptPayload(encStr: string): string {
   return decrypted;
 }
 
+const SESSION_DEVICE_ID = `arn_iptv_${crypto.randomBytes(4).toString('hex')}`;
+
 /**
  * Builds standard Drama Live v187 Android API payload.
  */
@@ -47,7 +49,7 @@ export function buildDramaPayload(code: string, topicId: string | null = null): 
   const normalizedCode = String(code).trim() || '202122';
   const p: Record<string, unknown> = {
     user_id: '_23351_1713304405644_notloggedin.com_dramalive3',
-    device_id: 'arn_iptv_dev_9921',
+    device_id: SESSION_DEVICE_ID,
     device_api: '34',
     version_name: '187',
     language: 'ar',

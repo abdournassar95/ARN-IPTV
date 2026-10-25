@@ -8,12 +8,14 @@ import {
   Loader2,
   ShieldCheck,
   Trash2,
-  Sparkles,
   Lock,
   Server,
   UserCheck,
   Calendar,
   Layers,
+  Download,
+  Upload,
+  Moon,
 } from 'lucide-react';
 import { CategoryItem, ChannelItem, PlaylistSource } from '../types/iptv';
 
@@ -29,6 +31,8 @@ interface PlaylistModalProps {
     categories: CategoryItem[],
     channels: ChannelItem[]
   ) => void;
+  isDeepBlackMode?: boolean;
+  onToggleDeepBlackMode?: () => void;
 }
 
 const SAMPLE_M3U_CONTENT = `#EXTM3U
@@ -53,6 +57,8 @@ export const PlaylistModal: React.FC<PlaylistModalProps> = ({
   onSelectPlaylist,
   onDeletePlaylist,
   onImportSuccess,
+  isDeepBlackMode = false,
+  onToggleDeepBlackMode,
 }) => {
   const [activeTab, setActiveTab] = useState<'fg' | 'xtream' | 'm3u' | 'crypto'>('fg');
   const [fgCode, setFgCode] = useState<string>('202122');
@@ -268,15 +274,61 @@ export const PlaylistModal: React.FC<PlaylistModalProps> = ({
     }
   };
 
+  const handleExportBackupJson = () => {
+    try {
+      const backupPayload = {
+        app: 'ARN IPTV Pro',
+        version: '2.6.0',
+        exportedAt: new Date().toISOString(),
+        playlists,
+        favorites: JSON.parse(localStorage.getItem('arn_iptv_clean_v5_favorites') || '[]'),
+        history: JSON.parse(localStorage.getItem('arn_iptv_clean_v5_history') || '[]'),
+      };
+      const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ARN_IPTV_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatusMessage('تم تصدير النسخة الاحتياطية للقوائم والمفضلة بنجاح.');
+    } catch {
+      setErrorMsg('تعذر تصدير النسخة الاحتياطية.');
+    }
+  };
+
+  const handleImportBackupJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || '{}'));
+        if (Array.isArray(parsed.favorites)) {
+          localStorage.setItem('arn_iptv_clean_v5_favorites', JSON.stringify(parsed.favorites));
+        }
+        if (Array.isArray(parsed.history)) {
+          localStorage.setItem('arn_iptv_clean_v5_history', JSON.stringify(parsed.history));
+        }
+        setStatusMessage('تم استعادة بيانات النسخة الاحتياطية بنجاح!');
+      } catch {
+        setErrorMsg('ملف النسخة الاحتياطية غير صالح.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-      <div className="w-full max-w-3xl bg-[#0f172a] border border-white/12 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-3xl bg-[#0d111a]/95 border border-white/[0.08] rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col max-h-[88vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#070b14] border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#06080e]/90 border-b border-white/[0.06]">
           <div>
-            <h3 className="text-base font-bold text-white">إدارة قوائم التشغيل وأكواد التفعيل (FG & M3U)</h3>
+            <h3 className="text-base font-bold text-white tracking-tight">إدارة قوائم التشغيل وأكواد التفعيل</h3>
             <p className="text-xs text-slate-400">
-              تفعيل أكواد دراما لايف (FG Code) أو إضافة روابط وملفات M3U / M3U8 الخاصة بك
+              تفعيل أكواد دراما لايف (FG Code) أو مزامنة Xtream Codes وملفات M3U / M3U8
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -292,9 +344,75 @@ export const PlaylistModal: React.FC<PlaylistModalProps> = ({
 
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-6">
+          {/* App Display Settings Card: Deep Black Mode (OLED) Toggle */}
+          {onToggleDeepBlackMode && (
+            <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-[#070b14]/90 border border-white/10">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                    isDeepBlackMode
+                      ? 'bg-black text-emerald-400 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                      : 'bg-[#0f172a] text-slate-400 border-white/10'
+                  }`}
+                >
+                  <Moon className={`w-4 h-4 ${isDeepBlackMode ? 'fill-current' : ''}`} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">
+                      الوضع الليلي الحقيقي (Deep Black Mode)
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400">OLED #000000</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    إطفاء البكسلات السوداء بالكامل لتقليل استهلاك الطاقة على شاشات OLED وتحسين راحة العين
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isDeepBlackMode}
+                onClick={onToggleDeepBlackMode}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isDeepBlackMode ? 'bg-emerald-500' : 'bg-slate-700'
+                }`}
+                title="تفعيل أو إيقاف الوضع الليلي الحقيقي (Deep Black Mode)"
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isDeepBlackMode ? '-translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
           {/* Active Playlists List */}
           <div>
-            <h4 className="text-xs font-bold text-slate-300 mb-2.5">القوائم المحفوظة حالياً ({playlists.length})</h4>
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <h4 className="text-xs font-bold text-slate-300">القوائم المحفوظة حالياً ({playlists.length})</h4>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleExportBackupJson}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/6 hover:bg-white/12 border border-white/10 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  title="تصدير نسخة احتياطية للقوائم والمفضلة (JSON)"
+                >
+                  <Download className="w-3 h-3 text-emerald-400" />
+                  <span>نسخة احتياطية</span>
+                </button>
+                <label
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/6 hover:bg-white/12 border border-white/10 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  title="استيراد ملف نسخة احتياطية (JSON)"
+                >
+                  <Upload className="w-3 h-3 text-sky-400" />
+                  <span>استعادة</span>
+                  <input type="file" accept=".json" onChange={handleImportBackupJson} className="hidden" />
+                </label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {playlists.map((pl) => {
                 const isSelected = pl.id === activePlaylistId;
@@ -302,28 +420,32 @@ export const PlaylistModal: React.FC<PlaylistModalProps> = ({
                   <div
                     key={pl.id}
                     onClick={() => onSelectPlaylist(pl.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-emerald-500/12 border-emerald-500/40 text-white'
-                        : 'bg-[#070b14]/70 border-white/8 text-slate-300 hover:border-white/20'
+                        ? 'bg-white/[0.08] border-white/[0.16] text-white shadow-xs'
+                        : 'bg-[#06080e]/70 border-white/[0.06] text-slate-300 hover:bg-white/[0.04] hover:border-white/[0.12]'
                     }`}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold truncate">{pl.name}</span>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] mt-1">
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-bold font-mono">
+                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-400 mt-1 tabular-nums">
+                        <span className="text-emerald-400 font-semibold font-mono">
                           {pl.channelCount} قناة
                         </span>
-                        <span className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono uppercase text-[10px]" dir="ltr">
+                        <span className="text-slate-600">·</span>
+                        <span className="text-slate-300 font-mono uppercase text-[10px]" dir="ltr">
                           {pl.type}
                         </span>
                         {pl.updatedAt && (
-                          <span className="text-slate-400 font-mono text-[10px]" dir="ltr">
-                            {pl.updatedAt}
-                          </span>
+                          <>
+                            <span className="text-slate-600">·</span>
+                            <span className="text-slate-500 font-mono text-[10px]" dir="ltr">
+                              {pl.updatedAt}
+                            </span>
+                          </>
                         )}
                       </div>
                     </div>
@@ -613,9 +735,9 @@ export const PlaylistModal: React.FC<PlaylistModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setM3uRawText(SAMPLE_M3U_CONTENT)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-400 hover:text-sky-300"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Layers className="w-3.5 h-3.5 text-emerald-400" />
                       ملء قائمة M3U تجريبية
                     </button>
                     <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/15 text-[11px] font-semibold text-slate-200 cursor-pointer">

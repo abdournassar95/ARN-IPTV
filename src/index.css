@@ -8,9 +8,10 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #070b14;
+    background-color: #06080e;
     color: #f1f5f9;
     letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
   }
 
   code, pre, .font-mono, .tabular-nums {
@@ -21,24 +22,24 @@
 
 /* Custom sleek scrollbars for 3-column desktop feel */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.5);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* Custom Range Slider for Volume 0-200% */
+/* Custom Range Slider for Volume 0-200% (Bang & Olufsen Precision Fader) */
 input[type="range"].arn-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -47,7 +48,7 @@ input[type="range"].arn-slider {
 }
 
 input[type="range"].arn-slider::-webkit-slider-runnable-track {
-  height: 5px;
+  height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
 }
@@ -55,17 +56,19 @@ input[type="range"].arn-slider::-webkit-slider-runnable-track {
 input[type="range"].arn-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  background: #10b981;
+  background: #f8fafc;
+  border: 2px solid #10b981;
   margin-top: -4.5px;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
-  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms ease;
 }
 
 input[type="range"].arn-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  transform: scale(1.16);
+  background: #ffffff;
 }
 
 /* Immersive True Fullscreen Styles */
@@ -122,5 +125,27 @@ input[type="range"].arn-slider::-webkit-slider-thumb:hover {
   will-change: transform;
 }
 
+/* =========================================================================
+   TRUE NIGHT MODE / OLED DEEP BLACK MODE (#000000)
+   Turns off OLED pixels completely to reduce power consumption & eye strain
+   ========================================================================= */
+html.oled-black,
+html.oled-black body {
+  background-color: #000000 !important;
+  color: #f8fafc;
+}
 
+html.oled-black [class*="bg-[#070b14]"],
+html.oled-black [class*="bg-[#090e1a]"],
+html.oled-black [class*="bg-[#0a101f]"],
+html.oled-black [class*="bg-[#050811]"] {
+  background-color: #000000 !important;
+}
 
+html.oled-black [class*="bg-[#0f172a]"] {
+  background-color: #030303 !important;
+}
+
+html.oled-black ::-webkit-scrollbar-track {
+  background: #000000;
+}

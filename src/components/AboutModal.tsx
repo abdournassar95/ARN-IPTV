@@ -10,32 +10,32 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-      <div className="w-full max-w-2xl bg-[#0f172a] border border-white/12 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-2xl bg-[#0d111a]/95 border border-white/[0.08] rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.85)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#070b14] border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#06080e]/90 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl p-0.5 bg-linear-to-tr from-cyan-400 via-teal-300 to-emerald-400 shadow-md shadow-cyan-500/20 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl p-1 bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0">
               <img
                 src="/assets/icons/app_icon.png"
                 alt="ARN"
-                className="w-full h-full object-contain rounded-[10px]"
+                className="w-full h-full object-contain rounded-lg"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
               />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">ARN IPTV Desktop & Web (Electron Edition)</h3>
-              <p className="text-xs text-emerald-400 font-semibold">
-                المطور والمالك: عبده رجب نصار — شركة ARN Technology © 2026
+              <h3 className="text-base font-bold text-white tracking-tight">ARN IPTV Pro — Desktop & Web</h3>
+              <p className="text-xs text-slate-400">
+                المطور والمالك: <span className="text-emerald-400 font-semibold">عبده رجب نصار</span> · شركة ARN Technology © 2026
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

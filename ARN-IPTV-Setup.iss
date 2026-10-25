@@ -65,7 +65,6 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}
 
 [UninstallRun]
 Filename: "taskkill.exe"; Parameters: "/F /IM ""{#MyAppExeName}"""; Flags: runhidden
-Filename: "taskkill.exe"; Parameters: "/F /IM node.exe"; Flags: runhidden
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\*"

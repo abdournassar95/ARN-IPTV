@@ -42,22 +42,33 @@ const streamCache = new NodeCache({
   maxKeys: 2500,
 });
 
-// Validates stream URL format and guards against dangerous internal SSRF target queries
+// Validates stream URL format and guards against dangerous internal SSRF target queries (including RFC 1918 private IPs)
 function isValidStreamUrl(urlStr: string): boolean {
   if (!urlStr || typeof urlStr !== 'string') return false;
   try {
     const parsed = new URL(urlStr);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
-    const hostname = parsed.hostname.toLowerCase();
-    // Block dangerous internal cloud metadata IPs and sensitive domains
+    const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+    // Block loopback, cloud metadata IPs, and sensitive internal domains
     if (
+      hostname === 'localhost' ||
       hostname === '169.254.169.254' ||
       hostname === '100.100.100.200' ||
       hostname === 'metadata.google.internal' ||
       hostname === '0.0.0.0' ||
       hostname === '::1' ||
+      hostname.startsWith('127.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.startsWith('fc00:') ||
+      hostname.startsWith('fd00:') ||
+      hostname.startsWith('fe80:') ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
       hostname.endsWith('.internal') ||
       hostname.endsWith('.local') ||
+      hostname.endsWith('.localdomain') ||
       hostname.endsWith('.onion')
     ) {
       return false;
@@ -486,7 +497,7 @@ export async function startServer(
     const srvIdx = Number(req.query.srv || 0);
     const cacheKey = `${idLive}:::${srvIdx}`;
 
-    let info = streamCache.get(cacheKey) || null;
+    let info = streamCache.get<ResolvedFgStream>(cacheKey) || null;
     if (!info) {
       info = await resolveFgStream(code, idLive, srvIdx);
       if (info?.streamUrl) {
@@ -527,7 +538,7 @@ export async function startServer(
       return;
     }
 
-    const info = streamCache.get(idLive);
+    const info = streamCache.get<ResolvedFgStream>(idLive);
     const reqHeaders: Record<string, string> = { ...(info?.headers || {}) };
     if (info?.agent) reqHeaders['User-Agent'] = info.agent;
 
@@ -566,7 +577,7 @@ export async function startServer(
       return;
     }
 
-    const info = streamCache.get(idLive);
+    const info = streamCache.get<ResolvedFgStream>(idLive);
     const reqHeaders: Record<string, string> = { ...(info?.headers || {}) };
     if (info?.agent) reqHeaders['User-Agent'] = info.agent;
 

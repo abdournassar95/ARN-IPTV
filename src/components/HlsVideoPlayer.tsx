@@ -22,6 +22,8 @@ import {
   Search,
   ListPlus,
   Tv,
+  PictureInPicture2,
+  Headphones,
 } from 'lucide-react';
 import { AspectRatioMode, ChannelItem, HlsQualityLevel, StreamServerSource } from '../types/iptv';
 
@@ -58,16 +60,32 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
   const [isLoadingServers, setIsLoadingServers] = useState<boolean>(false);
   const [serverIndex, setServerIndex] = useState<number>(0);
 
-  // Playback & volume state
+  // Playback & volume state (persisted across sessions)
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [volume, setVolumeState] = useState<number>(100); // 0 to 200%
+  const [volume, setVolumeState] = useState<number>(() => {
+    try {
+      const saved = Number(localStorage.getItem('arn_iptv_volume_pref'));
+      return Number.isFinite(saved) && saved >= 0 && saved <= 200 ? saved : 100;
+    } catch {
+      return 100;
+    }
+  }); // 0 to 200%
   const [showVolOverlay, setShowVolOverlay] = useState<boolean>(false);
   const volOverlayTimerRef = useRef<number | null>(null);
 
   const [qualities, setQualities] = useState<HlsQualityLevel[]>([]);
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto
-  const [aspectRatio, setAspectRatio] = useState<AspectRatioMode>('default');
+  const [audioTracks, setAudioTracks] = useState<Array<{ id: number; name: string; lang?: string }>>([]);
+  const [currentAudioTrack, setCurrentAudioTrack] = useState<number>(0);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioMode>(() => {
+    try {
+      const saved = localStorage.getItem('arn_iptv_aspect_pref') as AspectRatioMode | null;
+      return saved && ['default', '16:9', '4:3', 'fill', 'cover'].includes(saved) ? saved : 'default';
+    } catch {
+      return 'default';
+    }
+  });
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   // Auto-hide controls in fullscreen mode
@@ -201,6 +219,9 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
       const clamped = Math.max(0, Math.min(200, Math.round(newVol)));
       volumeRef.current = clamped;
       setVolumeState(clamped);
+      try {
+        localStorage.setItem('arn_iptv_volume_pref', String(clamped));
+      } catch {}
 
       const videoEl = videoRef.current;
       if (videoEl) {
@@ -313,6 +334,8 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
     );
     setQualities([]);
     setCurrentQuality(-1);
+    setAudioTracks([]);
+    setCurrentAudioTrack(0);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -403,6 +426,15 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
         });
 
         setQualities(extractedLevels);
+        if (Array.isArray(data.audioTracks) && data.audioTracks.length > 1) {
+          setAudioTracks(
+            data.audioTracks.map((t, idx) => ({
+              id: idx,
+              name: t.name || t.lang || `مسار صوتي ${idx + 1}`,
+              lang: t.lang,
+            }))
+          );
+        }
         videoEl
           .play()
           .then(() => {
@@ -412,6 +444,18 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
           .catch(() => {
             setIsPlaying(false);
           });
+      });
+
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
+        if (Array.isArray(data.audioTracks) && data.audioTracks.length > 1) {
+          setAudioTracks(
+            data.audioTracks.map((t, idx) => ({
+              id: idx,
+              name: t.name || t.lang || `مسار صوتي ${idx + 1}`,
+              lang: t.lang,
+            }))
+          );
+        }
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -543,6 +587,21 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
       wrapperEl.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  // Toggle Picture-in-Picture (PiP)
+  const togglePiP = useCallback(async () => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        await videoEl.requestPictureInPicture();
+      }
+    } catch {
+      // Browser may not support PiP on audio-only or restricted streams
     }
   }, []);
 
@@ -692,6 +751,22 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
     }
   };
 
+  // Handle Audio Track Change
+  const handleAudioTrackChange = (trackIdx: number) => {
+    setCurrentAudioTrack(trackIdx);
+    if (hlsRef.current) {
+      hlsRef.current.audioTrack = trackIdx;
+    }
+  };
+
+  // Handle Aspect Ratio Change with Persistence
+  const handleAspectRatioChange = (mode: AspectRatioMode) => {
+    setAspectRatio(mode);
+    try {
+      localStorage.setItem('arn_iptv_aspect_pref', mode);
+    } catch {}
+  };
+
   // Compute video aspect ratio CSS (Support Cover & Fill for 100% monitor filling with no borders)
   const getVideoAspectStyle = (): React.CSSProperties => {
     switch (aspectRatio) {
@@ -715,16 +790,16 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  // Render Drama Live style server buttons strip: [1 SD] [2 HD] [3 4K] [4 DLW] [5] [6] [7...]
+  // Render Apple TV / B&O Segmented Glass Server Track: [1 SD | 2 HD | 3 4K | 4 DLW ...]
   const renderDramaServerStrip = (isOverlay = false) => {
     if (!effectiveServers || effectiveServers.length === 0) return null;
 
     return (
       <div
-        className={`flex items-center gap-2 overflow-x-auto no-scrollbar select-none py-1.5 px-3 ${
+        className={`flex items-center gap-2.5 overflow-x-auto no-scrollbar select-none py-1.5 px-3.5 ${
           isOverlay
-            ? 'bg-[#070b14]/85 backdrop-blur-md rounded-2xl border border-white/10 mt-2 max-w-full shadow-2xl'
-            : 'bg-[#070b14]/95 border-b border-white/8 shrink-0'
+            ? 'bg-[#070b14]/85 backdrop-blur-xl rounded-xl border border-white/[0.08] mt-2 max-w-full shadow-xl'
+            : 'bg-[#070b14]/90 border-b border-white/[0.06] shrink-0'
         }`}
       >
         <button
@@ -737,17 +812,18 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
               hlsRef.current.loadSource(activeSource.url);
             }
           }}
-          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors shrink-0 cursor-pointer"
+          className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white transition-colors shrink-0 cursor-pointer"
           title="تحديث وإعادة تحميل السيرفر الحالي"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-emerald-400' : ''}`} />
         </button>
 
-        <span className="text-xs font-bold text-slate-300 whitespace-nowrap shrink-0 ml-1">
+        <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap shrink-0">
           الخوادم
         </span>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        {/* Unified Segmented Control Track */}
+        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/45 border border-white/[0.06] overflow-x-auto no-scrollbar">
           {effectiveServers.map((src, idx) => {
             const isActive = serverIndex === idx;
             const serverNum = src.serverNumber || idx + 1;
@@ -763,23 +839,19 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                   setServerIndex(idx);
                 }}
                 title={src.name}
-                className={`flex flex-col items-center justify-center min-w-11 px-2.5 py-1 rounded-xl transition-all duration-150 shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all duration-150 shrink-0 cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-linear-to-b from-emerald-500/35 to-emerald-500/10 border-2 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-105'
-                    : 'bg-[#0f172a]/90 hover:bg-[#1e293b] border border-white/12 text-slate-300 hover:text-white hover:border-white/30'
+                    ? 'bg-white/[0.12] text-white border border-white/[0.14] shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
                 }`}
               >
-                <span
-                  className={`text-xs font-bold font-mono leading-none ${
-                    isActive ? 'text-white' : 'text-slate-200'
-                  }`}
-                >
+                <span className="text-xs font-semibold font-mono tabular-nums leading-none">
                   {serverNum}
                 </span>
                 {badge && (
                   <span
-                    className={`text-[9px] font-bold font-mono uppercase tracking-wider leading-none mt-0.5 ${
-                      isActive ? 'text-emerald-300' : 'text-slate-400'
+                    className={`text-[10px] font-mono tabular-nums uppercase tracking-wide leading-none ${
+                      isActive ? 'text-emerald-400 font-semibold' : 'text-slate-500'
                     }`}
                   >
                     {badge}
@@ -790,8 +862,8 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
           })}
         </div>
         {isLoadingServers && (
-          <span className="text-[10px] text-slate-400 animate-pulse whitespace-nowrap shrink-0 mr-1">
-            جاري فحص كافة الخوادم...
+          <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0 mr-1">
+            جاري فحص الخوادم...
           </span>
         )}
       </div>
@@ -803,14 +875,14 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
     return (
       <section
         ref={wrapperRef}
-        className="flex flex-col flex-1 h-full bg-[#090e1a]/90 border border-white/8 rounded-xl overflow-hidden select-none items-center justify-center p-6 text-center"
+        className="flex flex-col flex-1 h-full bg-[#090e1a]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl overflow-hidden select-none items-center justify-center p-6 text-center"
       >
-        <div className="max-w-md w-full bg-[#0f172a]/90 border border-white/12 rounded-2xl p-8 shadow-2xl space-y-5">
-          <div className="w-20 h-20 mx-auto rounded-3xl p-1 bg-linear-to-tr from-cyan-400/40 via-white/10 to-emerald-400/40 border border-cyan-400/40 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <div className="max-w-md w-full bg-[#0f172a]/70 border border-white/[0.08] rounded-2xl p-8 shadow-2xl space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-2xl p-2 bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
             <img
               src="/assets/icons/app_icon.png"
               alt="ARN"
-              className="w-full h-full object-contain rounded-2xl"
+              className="w-full h-full object-contain rounded-xl"
               onError={(e) => {
                 (e.currentTarget as HTMLElement).style.display = 'none';
               }}
@@ -818,19 +890,19 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-white">مرحباً بك في ARN IPTV Pro</h2>
+            <h2 className="text-base font-bold text-white">مرحباً بك في ARN IPTV Pro</h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              التطبيق نظيف وجاهز للتشغيل. قم بإدخال كود دراما لايف (FG Code) أو إضافة رابط قائمة M3U / M3U8 لبدء المشاهدة فوراً.
+              قم بإدخال كود التفعيل (FG Code) أو إضافة رابط قائمة M3U / Xtream لبدء المشاهدة.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onOpenPlaylistModal}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer"
           >
             <ListPlus className="w-4 h-4" />
-            <span>إدخال كود دراما لايف أو إضافة قائمة (FG / M3U)</span>
+            <span>إضافة كود أو قائمة تشغيل</span>
           </button>
         </div>
       </section>
@@ -1071,6 +1143,15 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
             </button>
 
             <button
+              type="button"
+              onClick={togglePiP}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="وضع صورة داخل صورة العائم (Picture-in-Picture)"
+            >
+              <PictureInPicture2 className="w-4 h-4" />
+            </button>
+
+            <button
               id="btnFullscreen"
               type="button"
               onClick={toggleFullscreen}
@@ -1137,20 +1218,20 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
           className="transition-all duration-150"
         />
 
-        {/* Studio Radio Visualizer when channel.section === 'radio' */}
+        {/* Bang & Olufsen Acoustic Radio Studio when channel.section === 'radio' */}
         {channel?.section === 'radio' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-linear-to-b from-[#0a101f] via-[#070b14] to-[#04070e] z-10 select-none overflow-hidden">
-            {/* Ambient background glow ring */}
-            <div className="absolute w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none animate-pulse" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#070b14] z-10 select-none overflow-hidden">
+            {/* Subtle ambient studio illumination */}
+            <div className="absolute w-96 h-96 rounded-full bg-white/[0.02] blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full space-y-5">
-              {/* Radio Station Logo in glowing glass container */}
-              <div className="relative group">
+            <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full space-y-6">
+              {/* Anodized Acoustic Dial Container */}
+              <div className="relative">
                 <div
-                  className={`w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-[#0f172a]/90 border-2 flex items-center justify-center p-4 shadow-2xl transition-all duration-300 ${
+                  className={`w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-[#0f172a] border flex items-center justify-center p-5 shadow-2xl transition-all duration-300 ${
                     isPlaying
-                      ? 'border-emerald-400 shadow-[0_0_35px_rgba(16,185,129,0.35)] scale-105'
-                      : 'border-white/15'
+                      ? 'border-white/20 ring-8 ring-white/[0.03]'
+                      : 'border-white/10'
                   }`}
                 >
                   {channel.logo ? (
@@ -1158,7 +1239,7 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                       src={channel.logo}
                       alt={channel.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain filter drop-shadow-md"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLElement).style.display = 'none';
                         const parent = e.currentTarget.parentElement;
@@ -1168,43 +1249,33 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                     />
                   ) : null}
                   <div
-                    className={`radio-studio-fallback items-center justify-center w-full h-full text-emerald-400 ${
+                    className={`radio-studio-fallback items-center justify-center w-full h-full text-slate-300 ${
                       channel.logo ? 'hidden' : 'flex'
                     }`}
                   >
-                    <Radio className="w-16 h-16" />
+                    <Radio className="w-12 h-12" />
                   </div>
                 </div>
-
-                {/* Live On-Air Badge */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0a101f] border border-emerald-500/40 shadow-lg text-[10px] font-bold whitespace-nowrap">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isPlaying
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
-                        : 'bg-amber-400'
-                    }`}
-                  />
-                  <span className={isPlaying ? 'text-rose-400' : 'text-amber-400'}>
-                    {isPlaying ? 'ON AIR · بث إذاعي مباشر' : 'متوقف مؤقتاً'}
-                  </span>
-                </div>
               </div>
 
-              {/* Station Info */}
-              <div className="space-y-1.5 pt-2">
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm">
+              {/* Station Info & Unboxed Metadata */}
+              <div className="space-y-1.5">
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                   {channel.name}
                 </h2>
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-300 flex-wrap">
-                  <span className="text-emerald-400 font-semibold">{channel.groupTitle}</span>
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                  <span>{channel.groupTitle}</span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-sky-400">HQ Audio Stream</span>
+                  <span className={isPlaying ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
+                    {isPlaying ? 'بث إذاعي مباشر' : 'متوقف مؤقتاً'}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-mono text-slate-400">HQ Audio</span>
                 </div>
               </div>
 
-              {/* Dynamic Sound Equalizer Waveform Bars */}
-              <div className="flex items-end justify-center gap-1 sm:gap-1.5 h-12 py-1 px-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md">
+              {/* Precision Acoustic Spectrum Waveform Bars */}
+              <div className="flex items-end justify-center gap-1.5 h-10 py-1 px-5 bg-white/[0.03] rounded-xl border border-white/[0.06]">
                 {[
                   35, 65, 85, 45, 95, 60, 80, 40, 100, 75, 50, 90, 70, 40, 85, 55, 75, 90, 60, 80, 45, 95, 65, 35
                 ].map((defaultHeight, idx) => {
@@ -1215,9 +1286,7 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                     <div
                       key={idx}
                       className={`w-1 rounded-full transition-all duration-150 ${
-                        isPlaying
-                          ? 'bg-linear-to-t from-emerald-500 to-sky-400'
-                          : 'bg-slate-600'
+                        isPlaying ? 'bg-emerald-400/90' : 'bg-white/15'
                       }`}
                       style={{
                         height: isPlaying ? `${defaultHeight}%` : '20%',
@@ -1238,10 +1307,10 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                     e.stopPropagation();
                     togglePlayPause();
                   }}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs transition-all shadow-lg cursor-pointer ${
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                     isPlaying
-                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/25'
-                      : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
+                      ? 'bg-white text-slate-950 hover:bg-slate-200'
+                      : 'bg-white/10 hover:bg-white/15 text-white border border-white/15'
                   }`}
                 >
                   {isPlaying ? (
@@ -1515,7 +1584,7 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
                   <Maximize2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <select
                     value={aspectRatio}
-                    onChange={(e) => setAspectRatio(e.target.value as AspectRatioMode)}
+                    onChange={(e) => handleAspectRatioChange(e.target.value as AspectRatioMode)}
                     className="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
                     title="نسبة أبعاد الشاشة وملاءمتها"
                   >
@@ -1701,8 +1770,27 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
             )}
           </div>
 
-          {/* Adaptive Quality Selector & Aspect Ratio Switcher */}
+          {/* Adaptive Quality Selector, Multi-Audio Track & Aspect Ratio Switcher */}
           <div className="flex items-center gap-2">
+            {/* Multi-Audio Track Selector (when stream has multiple commentators/languages) */}
+            {audioTracks.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-[#070b14] border border-white/10 rounded-lg px-2.5 py-1.5">
+                <Headphones className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <select
+                  value={currentAudioTrack}
+                  onChange={(e) => handleAudioTrackChange(Number(e.target.value))}
+                  className="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer whitespace-nowrap"
+                  title="اختيار المسار الصوتي / المعلق"
+                >
+                  {audioTracks.map((t) => (
+                    <option key={t.id} value={t.id} className="bg-[#0f172a] text-slate-100">
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Multi-Quality Selector */}
             <div className="flex items-center gap-1.5 bg-[#070b14] border border-white/10 rounded-lg px-2.5 py-1.5">
               <Sliders className="w-3.5 h-3.5 text-sky-400 shrink-0" />
@@ -1730,7 +1818,7 @@ export const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
               <select
                 id="aspectRatioSelect"
                 value={aspectRatio}
-                onChange={(e) => setAspectRatio(e.target.value as AspectRatioMode)}
+                onChange={(e) => handleAspectRatioChange(e.target.value as AspectRatioMode)}
                 className="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer whitespace-nowrap"
                 title="نسبة أبعاد الشاشة وملاءمتها"
               >
