@@ -1,108 +1,102 @@
-# 🚀 ARN IPTV Desktop Pro (Electron Edition v2.0)
+<div align="center">
 
-**المطور والمالك:** م. عبده رجب نصار — **شركة ARN Technology © 2026**
+# 📺 ARN IPTV Pro (2026)
+### مشغل ومنصة البث التلفزيوني والفضائي العربي الذكي
+**تصميم وتطوير: عبده رجب نصار — شركة ARN Technology**
 
-تطبيق سطح مكتب احترافي فائق الخفة والجمال لتشغيل **البث المباشر (Live TV)، الأفلام (VOD)، والمسلسلات (Series)** بنمط **Dark Glassmorphism** ودعم كامل للعربية (`RTL`)، مبني بالكامل على **Electron.js + Node.js + SQLite WAL + HLS.js + Web Audio API** بدون أي اعتماديات خارجية (لا يتطلب Python ولا VLC خارجي).
+[![Version](https://img.shields.io/badge/Version-2.6.0-blue.svg?style=for-the-badge)](https://github.com/abdournassar95/ARN-IPTV)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20x64%20|%20Electron-success.svg?style=for-the-badge)](https://github.com/abdournassar95/ARN-IPTV)
+[![Design](https://img.shields.io/badge/Design-Dark%20Glassmorphism-violet.svg?style=for-the-badge)](https://github.com/abdournassar95/ARN-IPTV)
+[![Security](https://img.shields.io/badge/Security-Hardened%20(Helmet%20%2B%20SSRF%20Shield)-emerald.svg?style=for-the-badge)](https://github.com/abdournassar95/ARN-IPTV)
 
----
-
-## ✨ أبرز المميزات الهندسية
-
-* **🔐 محرك فك التشفير المدمج (`fg_engine.js`):**
-  * تشفير وفك تشفير حزم **AES-128-CBC (PKCS7)** المتوافقة مع بروتوكول Drama Live (v187 / v13.0.0).
-  * استيراد الباقات عبر كود التفعيل مع شريط تقدم لحظي وحلّ روابط البث وترويسات الحماية.
-* **📡 خادم البروكسي المحلي الذكي (`stream_proxy.js`):**
-  * يعمل محلياً على `127.0.0.1:39871` لإعادة كتابة ملفات المانيفست الرئيسية والفرعية (`/live`, `/subplaylist`, `/ts`, `/key`, `/direct`).
-  * إزالة تشويش مقاطع `k9x_` (`swap` engine) وتمرير ترويسات `User-Agent` و `Referer` المخصصة.
-  * إلغاء فوري للاتصالات الخلفية (`AbortController`) عند التنقل السريع بين القنوات لتوفير عرض النطاق.
-  * دعم طلبات النطاق (`HTTP Range 206`) لتقديم وتأخير الأفلام والحلقات بسلاسة.
-* **🎬 مشغل الفيديو الاحترافي (`player.js`):**
-  * **تعدد السيرفرات والتحويل التلقائي (Multi-Server & Auto-Failover):** الانتقال التلقائي الفوري إلى السيرفر الاحتياطي عند تعطل الخادم الحالي.
-  * **تعدد الجودات المتكيف (Adaptive HLS):** التبديل اللحظي بين الجودات (`4K UHD`, `1080p FHD`, `720p HD`, `480p SD`, `360p`, `Auto`) ومبدّل مسارات الصوت/التعليق.
-  * **تضخيم الصوت حتى 200% (Audio Boost):** عبر `Web Audio API` (`AudioContext` + `GainNode`) باستخدام عجلة الماوس مع مؤشر **OSD** عائم.
-  * **إيماءات وخصائص سطح المكتب:** النقر المزدوج لملء الشاشة، وضع المسرح (`T`)، صورة داخل صورة (`PiP`)، التقاط صورة فورية من البث (`PNG Snapshot`)، واستئناف موضع المشاهدة للأفلام والمسلسلات.
-* **⚡ قاعدة بيانات SQLite + محرك Virtual Scroll لـ 50,000+ قناة:**
-  * محرك `better-sqlite3` بوضع `WAL` مع بحث ذكي يطبّع الحروف والأرقام العربية (`أ إ آ -> ا`، `ة -> ه`، `ى -> ي`).
-  * عرض افتراضي (Windowed Virtual Scrolling) يحافظ على سرعة **60 FPS** حتى مع القوائم الضخمة (+50 ألف قناة).
-* **📋 دعم شامل لمصادر القوائم:**
-  * أكواد **Drama Live (FG)**، روابط **M3U / M3U8**، ملفات **M3U المحلية**، لصق نصوص M3U مباشرة، وحسابات **Xtream Codes API**.
+</div>
 
 ---
 
-## 📂 هيكل المشروع
+## 🌟 نظرة عامة (Overview)
 
-```text
-ARN-IPTV/
-├── package.json                  # توصيف المشروع وسكريبتات التشغيل والبناء
-├── Run-DesktopApp.bat            # مشغل ويندوز نظيف بترميز UTF-8 (chcp 65001)
-├── Run-DesktopApp.ps1            # سكريبت إقلاع PowerShell داعم لـ UAC RunAs
-├── src/
-│   ├── main/
-│   │   ├── main.js               # المعالج الرئيسي، النوافذ بدون إطار، الـ Tray والـ IPC
-│   │   ├── app_service.js        # طبقة الخدمات الموحدة للتطبيق
-│   │   ├── fg_engine.js          # محرك تشفير وفك تشفير AES-128-CBC
-│   │   ├── stream_proxy.js       # خادم البروكسي المحلي ومزيل k9x_ swap
-│   │   ├── playlist_parser.js    # محلل M3U ودمج السيرفرات وواجهة Xtream Codes
-│   │   └── database.js           # مدير قاعدة بيانات SQLite فائق السرعة
-│   ├── preload/
-│   │   └── preload.js            # جسر الحماية المعزول (contextBridge)
-│   ├── server/
-│   │   └── web_preview.js        # خادم معاينة الويب والشبكة المحلية
-│   └── renderer/
-│       ├── index.html            # واجهة الـ 3 أعمدة بنمط Dark Glassmorphism
-│       ├── css/                  # تصميم glassmorphism.css و layout.css
-│       ├── js/                   # محركات الواجهة والمشغل والـ Virtual Scroll
-│       └── assets/               # خط Cairo و JetBrains Mono محلياً + مكتبة HLS.js + الأيقونات
-├── build/
-│   ├── icon.ico                  # أيقونة التطبيق الرسمية لويندوز
-│   ├── installer.iss             # سكريبت حزمة التثبيت Inno Setup
-│   └── Sign-Package.ps1          # سكريبت التوقيع الرقمي بشهادة ARN Technology + DigiCert
-└── tests/
-    └── run_tests.js              # اختبارات آلية شاملة واختبار ضغط 50,000 قناة
-```
+**ARN IPTV Pro** هو تطبيق احترافي متقدم لتشغيل البث التلفزيوني عبر الإنترنت (IPTV / M3U / Xtream Codes)، مبني بأحدث معايير الويب وسطح المكتب بنمط الزجاج الداكن الفاخر (**Dark Glassmorphism**).
+
+يوفر البرنامج تجربة مشاهدة سينمائية سلسة ومستقرة، مع دعم خوادم بروكسي داخلية لفك تشفير التدفقات، تخطي حظر CORS، ومعالجة بث HLS/m3u8 المباشر.
 
 ---
 
-## 🛠️ التشغيل والبناء والتجميع
+## ✨ المميزات الرئيسية (Key Features)
 
-### 1. التشغيل المباشر للتطوير (على ويندوز)
-انقر نقراً مزدوجاً على **`Run-DesktopApp.bat`**، أو عبر الطرفية:
+- 🎨 **واجهة زجاجية داكنة فائقة الجمال (Dark Glassmorphism UI):** مؤثرات بصرية راقية مع دعم كامل للغة العربية (RTL).
+- ⚡ **محرك داخلي مدمج للبث (Embedded Local Streaming Engine):** خادم Express مدمج لإعادة توجيه وتحسين تدفقات m3u8 بدون تقطيع.
+- 📡 **دعم اشتراكات متنوعة:** دعم كامل لملفات وقوائم M3U/M3U8 وروابط خوادم Xtream API مع استخراج ذكي للأقسام والقنوات.
+- 🛡️ **حماية أمنية مشددة (Security Hardened):**
+  - درع كامل ضد هجمات SSRF وتصفية العناوين الخاصة بالسحابة والشبكات الداخلية.
+  - سياسات أمان Helmet و Content Security Policy (CSP) متوافقة مع مشغلات الفيديو.
+  - حماية بيانات الاعتماد (Credentials Sanitization) لمنع تسريب بيانات المستخدم في السجلات.
+  - قيود معدل الطلبات (Rate Limiting) لمنع الإغراق.
+- 🔁 **نظام التبديل التلقائي للخوادم:** خوارزمية ذكية لاختيار أفضل خادم بديل في حال تعثر البث الأساسي.
+- ⭐ **المفضلة والتاريخ وسجل المشاهدة:** إدارة كاملة للقنوات المفضلة مع بحث لحظي فوري.
+- 💻 **تطبيق سطح مكتب معتمد لنظام ويندوز (Windows Desktop Application):** مدعوم بمثبت رسمي موقع رقمياً مع ميزة التحديث الفوري (In-Place Hot Patch).
+
+---
+
+## 🛠️ التقنيات المستخدمة (Tech Stack)
+
+- **سطح المكتب:** [Electron.js](https://www.electronjs.org/) (Main & Preload Context Isolation Architecture)
+- **الواجهة الأمامية:** [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Tailwind CSS 4](https://tailwindcss.com/)
+- **الخادم الداخلي:** [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) + [Helmet](https://helmetjs.github.io/) + [NodeCache](https://github.com/node-cache/node-cache)
+- **مشغل الفيديو:** [Hls.js](https://github.com/video-dev/hls.js/) للتعامل مع بروتوكول HTTP Live Streaming
+- **الأيقونات والتأثيرات:** [Lucide Icons](https://lucide.dev/) + [Motion](https://motion.dev/)
+
+---
+
+## 🚀 التشغيل والتطوير (Getting Started)
+
+### المتطلبات المسبقة:
+- [Node.js](https://nodejs.org/) الإصدار 20 أو أحدث
+- مدير الحزم `npm`
+
+### خطوات التثبيت والتشغيل المحلي:
+
 ```bash
-npm install
-npm start
+# 1. استنساخ المستودع
+git clone https://github.com/abdournassar95/ARN-IPTV.git
+cd ARN-IPTV
+
+# 2. تثبيت الحزم البرمجية
+npm install --legacy-peer-deps
+
+# 3. تشغيل وضع التطوير المحلي
+npm run dev
+
+# 4. تشغيل تطبيق سطح المكتب (Electron)
+npm run electron:start
 ```
 
-### 2. تشغيل الاختبارات الآلية وفحص الأداء
+### بناء الحزم والتوزيع (Production Build):
+
 ```bash
-npm test
-```
+# بناء حزمة سطح المكتب كبرنامج تثبيت رسمي لنظام ويندوز
+npm run electron:dist
 
-### 3. بناء نسخة التثبيت النهائية لويندوز (`.exe`)
-```bash
-# تجميع حزمة NSIS + النسخة المحمولة Portable عبر electron-builder
-npm run dist
-
-# أو لتوليد مجلد win-unpacked لتمريره إلى Inno Setup (build/installer.iss)
-npm run dist:dir
-```
-
-### 4. التوقيع الرقمي المعتمد (ARN Technology + DigiCert Timestamp)
-```powershell
-powershell -ExecutionPolicy Bypass -File .\build\Sign-Package.ps1 -CreateCertificateIfMissing
+# بناء حزمة محمولة بدون تثبيت (Portable)
+npm run electron:portable
 ```
 
 ---
 
-## ⌨️ اختصارات لوحة المفاتيح وإيماءات الماوس
+## 👨‍💻 المطور وحقوق الملكية (Developer & Copyright)
 
-| الاختصار / الإيماءة | الوظيفة |
-| :--- | :--- |
-| **`Space`** | تشغيل / إيقاف مؤقت |
-| **`F`** أو **نقر مزدوج على الفيديو** | ملء الشاشة / الخروج منها |
-| **عجلة الماوس فوق الفيديو** | رفع / خفض الصوت وتضخيمه حتى **200%** مع مؤشر OSD |
-| **`M`** | كتم / استعادة الصوت |
-| **`T`** | تفعيل / إغلاق وضع المسرح (توسيع المشغل) |
-| **`↑` / `↓`** | زيادة / خفض الصوت بنسبة 5% |
-| **`←` / `→`** | تقديم / إرجاع البث 10 ثوانٍ |
-| **`R`** | إعادة تنشيط اتصال البث الحالي |
-| **`S`** | التقاط صورة فورية من البث بصيغة PNG |
+- **اسم الشركة:** ARN Technology
+- **تطوير وبرمجة:** عبده رجب نصار (Abdo Ragab Nassar)
+- **حقوق النشر:** جميع الحقوق محفوظة © 2026 لشركة ARN Technology.
+
+### 🌐 قنوات التواصل الرسمية:
+- **WhatsApp:** [+201556710314](https://wa.me/201556710314)
+- **Telegram:** [@ABDOURNASSAR95](https://t.me/ABDOURNASSAR95)
+- **Facebook:** [abdouragab.nassar](https://www.facebook.com/abdouragab.nassar)
+- **Messenger:** [abdouragab.nassar](https://m.me/abdouragab.nassar)
+- **GitHub:** [@abdournassar95](https://github.com/abdournassar95)
+
+---
+
+<div align="center">
+  <sub>صنع بكل فخر واعتزاز بواسطة <b>عبده رجب نصار</b> — شركة <b>ARN Technology</b> © 2026</sub>
+</div>

@@ -1,0 +1,6 @@
+{
+  "name": "ARN IPTV Pro — Desktop & Web Edition",
+  "description": "منصة بث IPTV احترافية بنمط Dark Glassmorphism مع محرك فك تشفير دراما لايف وبروكسي محلي ومولد حزمة Electron.js — تطوير عبده رجب نصار (ARN Technology).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

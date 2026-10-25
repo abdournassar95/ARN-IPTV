@@ -1,87 +1,92 @@
 {
-  "name": "arn-iptv-desktop",
+  "name": "arn-iptv-pro",
   "productName": "ARN IPTV Pro",
-  "version": "2.0.0",
-  "description": "ARN IPTV Desktop (Electron Edition) — مشغل IPTV احترافي فائق السرعة بنمط Dark Glassmorphism ومحرك فك تشفير وبروكسي مدمج",
-  "main": "src/main/main.js",
-  "author": {
-    "name": "عبده رجب نصار — شركة ARN Technology",
-    "url": "https://github.com/abdournassar95"
-  },
+  "version": "2.6.0",
+  "description": "منصة البث الفضائي العربي الحي (ARN IPTV Pro) — شركة ARN Technology وتطوير وبرمجة عبده رجب نصار © 2026",
+  "author": "عبده رجب نصار — شركة ARN Technology",
   "license": "Proprietary",
+  "main": "electron-main.cjs",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "preview": "node src/server/web_preview.js",
-    "test": "node tests/run_tests.js",
-    "sync-assets": "node scripts/sync-assets.js",
-    "rebuild:electron": "electron-builder install-app-deps",
-    "dist:dir": "electron-builder --win --dir",
-    "dist": "electron-builder --win --x64"
+    "dev": "tsx server.ts",
+    "start": "node server.ts",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist-server/server.cjs --external:vite --external:electron",
+    "build": "vite build && npm run build:server",
+    "preview": "vite preview",
+    "clean": "rm -rf dist release server.js",
+    "lint": "tsc --noEmit",
+    "electron:start": "electron electron-main.cjs",
+    "electron:pack": "vite build && electron-builder --dir",
+    "electron:dist": "vite build && electron-builder --win nsis --x64",
+    "electron:portable": "vite build && electron-builder --win portable --x64",
+    "build:all": "vite build && electron-builder --win --x64"
   },
   "dependencies": {
-    "axios": "^1.7.9",
-    "better-sqlite3": "^11.8.1",
-    "hls.js": "^1.5.20"
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/cors": "^2.8.19",
+    "@vitejs/plugin-react": "^6.1.1",
+    "axios": "^1.20.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "hls.js": "^1.7.3",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "node-cache": "^5.1.2",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^8.3.0"
   },
   "devDependencies": {
-    "electron": "^35.0.0",
-    "electron-builder": "^26.0.0"
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.21",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.64.1",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2"
   },
   "build": {
-    "appId": "com.arntechnology.arniptv",
+    "appId": "com.arntechnology.iptvpro",
     "productName": "ARN IPTV Pro",
-    "copyright": "Copyright © 2026 عبده رجب نصار — شركة ARN Technology",
+    "copyright": "Copyright © 2026 ARN Technology — عبده رجب نصار",
+    "npmRebuild": false,
     "asar": true,
-    "asarUnpack": [
-      "**/*.node",
-      "src/renderer/assets/demo/**/*"
-    ],
+    "directories": {
+      "output": "release"
+    },
     "files": [
-      "src/**/*",
+      "dist/**/*",
+      "dist-server/**/*",
+      "electron-main.cjs",
+      "preload.cjs",
+      "public/**/*",
       "package.json"
     ],
-    "directories": {
-      "buildResources": "build",
-      "output": "dist"
-    },
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "public/assets/icons/app_icon.ico",
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        "nsis",
+        "portable"
       ],
-      "signingHashAlgorithms": [
-        "sha256"
-      ],
-      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "ARN IPTV Pro",
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico"
-    },
-    "linux": {
-      "icon": "src/renderer/assets/icons/app_icon.png",
-      "category": "AudioVideo",
-      "target": [
-        "AppImage"
-      ]
+      "artifactName": "ARN_IPTV_Pro_Setup_v${version}.${ext}"
     }
   }
 }

@@ -1,48 +1,57 @@
-# =============================================================================
-# ARN IPTV Desktop Pro — Official PowerShell Launcher (UTF-8 & UAC Ready)
-# Copyright © 2026 عبده رجب نصار — شركة ARN Technology
-# =============================================================================
-param(
-    [switch]$Elevate,
-    [switch]$DevTools
-)
+# ==============================================================================
+# ARN IPTV Pro -- Desktop Application Launcher
+# Development & Engineering: Abdo Ragab Nassar (ARN Technology 2026)
+# ==============================================================================
 
-$ErrorActionPreference = "Stop"
-[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding           = [System.Text.Encoding]::UTF8
 
-Set-Location -LiteralPath $PSScriptRoot
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "         ARN IPTV Pro -- Desktop Edition (2026)           " -ForegroundColor Green
+Write-Host "     Company: ARN Technology -- Abdo Ragab Nassar         " -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host ""
 
-# رفع الصلاحيات عبر UAC RunAs عند الطلب
-if ($Elevate) {
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "[UAC] جاري إعادة التشغيل بصلاحيات المسؤول..." -ForegroundColor Cyan
-        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-        if ($DevTools) { $argList += " -DevTools" }
-        Start-Process powershell.exe -Verb RunAs -ArgumentList $argList
-        exit 0
+$CurrentDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location -Path $CurrentDir
+
+# 1. Check if production dist and dist-server exist, if not build them
+$DistPath = Join-Path $CurrentDir "dist"
+$ServerDist = Join-Path $CurrentDir "dist-server\server.cjs"
+if (-not (Test-Path $DistPath) -or -not (Test-Path $ServerDist)) {
+    Write-Host "[1/3] Building Dark Glassmorphism UI & Embedded Server..." -ForegroundColor Cyan
+    npm run build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Build failed. Please inspect build errors." -ForegroundColor Red
+        Exit $LASTEXITCODE
+    }
+} else {
+    Write-Host "[1/3] UI and embedded server are ready." -ForegroundColor Green
+}
+
+# 2. Check dependencies
+$NodeModulesPath = Join-Path $CurrentDir "node_modules"
+if (-not (Test-Path $NodeModulesPath)) {
+    Write-Host "[2/3] Installing essential runtime dependencies..." -ForegroundColor Cyan
+    npm install --legacy-peer-deps
+} else {
+    Write-Host "[2/3] Runtime packages are ready." -ForegroundColor Green
+}
+
+# 3. Launch the Electron Desktop Window
+Write-Host "[3/3] Launching ARN IPTV Pro Desktop Window..." -ForegroundColor Green
+Write-Host "Close the main window to exit." -ForegroundColor Gray
+Write-Host ""
+
+$ElectronExe = Join-Path $CurrentDir "node_modules\electron\dist\electron.exe"
+if (Test-Path $ElectronExe) {
+    & $ElectronExe ".\electron-main.cjs"
+} else {
+    $ElectronCmd = Join-Path $CurrentDir "node_modules\.bin\electron.cmd"
+    if (Test-Path $ElectronCmd) {
+        & $ElectronCmd ".\electron-main.cjs"
+    } else {
+        npx electron ".\electron-main.cjs"
     }
 }
 
-Write-Host "🚀 جاري تشغيل ARN IPTV Desktop Pro — ARN Technology..." -ForegroundColor Green
-
-$packagedExe = Join-Path $PSScriptRoot "dist\win-unpacked\ARN IPTV Pro.exe"
-if (Test-Path $packagedExe) {
-    Start-Process -FilePath $packagedExe
-    exit 0
-}
-
-if (-not (Test-Path (Join-Path $PSScriptRoot "node_modules"))) {
-    Write-Host "[NPM] جاري تثبيت الاعتماديات المحلية..." -ForegroundColor Yellow
-    npm install
-}
-
-node scripts/sync-assets.js
-
-if ($DevTools) {
-    npm run dev
-} else {
-    npm start
-}
+Write-Host "Application closed." -ForegroundColor Gray
