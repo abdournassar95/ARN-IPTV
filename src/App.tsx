@@ -15,6 +15,7 @@ import {
   X,
   ChevronDown,
   Moon,
+  Smartphone,
 } from 'lucide-react';
 import {
   CategoryItem,
@@ -27,6 +28,7 @@ import { HlsVideoPlayer } from './components/HlsVideoPlayer';
 import { PlaylistModal } from './components/PlaylistModal';
 import { AboutModal } from './components/AboutModal';
 import { SplashScreen } from './components/SplashScreen';
+import { AndroidSimulatorModal } from './components/AndroidSimulatorModal';
 import { getCategoryVisual } from './utils/iptvIcons';
 import { loadCatalogFromIdb, saveCatalogToIdb } from './utils/catalogStorage';
 import { ARABIC_RADIO_CATEGORIES, ARABIC_RADIO_CHANNELS } from './server/arabicRadioCatalog';
@@ -142,6 +144,7 @@ export default function App() {
   // Modals
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [isAndroidSimulatorOpen, setIsAndroidSimulatorOpen] = useState<boolean>(false);
   const [isSplashOpen, setIsSplashOpen] = useState<boolean>(() => {
     try {
       return localStorage.getItem('arn_iptv_show_splash_startup') !== 'false';
@@ -745,6 +748,17 @@ export default function App() {
             </span>
           </button>
 
+          {/* Interactive Android Simulator Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsAndroidSimulatorOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            title="تجربة نسخة أندرويد و Android TV مباشرة وتحميل كود المشروع"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">📱 محاكي أندرويد و TV</span>
+          </button>
+
           {/* Interactive Splash Screen Trigger Button */}
           <button
             type="button"
@@ -1271,6 +1285,14 @@ export default function App() {
       />
 
       <AboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
+
+      {/* Interactive Android Simulator Modal */}
+      <AndroidSimulatorModal
+        isOpen={isAndroidSimulatorOpen}
+        onClose={() => setIsAndroidSimulatorOpen(false)}
+        channels={channels}
+        categories={categories}
+      />
 
       {/* Interactive Splash Screen */}
       <SplashScreen isOpen={isSplashOpen} onClose={() => setIsSplashOpen(false)} />

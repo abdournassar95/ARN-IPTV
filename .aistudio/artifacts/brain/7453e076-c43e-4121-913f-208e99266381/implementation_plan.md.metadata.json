@@ -1,6 +1,6 @@
 {
-  "summary":  "خطة واقتراحات الارتقاء البصري الشامل لمنصة ARN IPTV Pro بطابع سينمائي هادئ مستوحى من Apple TV و Bang & Olufsen، مع التخلص الكامل من أنماط الذكاء الاصطناعي التقليدية.",
-  "updatedAt":  "2026-10-25T20:13:29.108703819Z",
+  "summary":  "خطة التنفيذ المعمارية الشاملة لبناء مشروع أندرويد أصلي متكامل (Native Android App) لتطبيق ARN IPTV Pro بلغة Kotlin و Jetpack Compose و AndroidX Media3 (ExoPlayer)، متضمناً محرك فك تشفير دراما لايف AES-128 الأصلي، دعم Xtream Codes، ومشغل سينمائي متقدم للهواتف والشاشات الذكية (Android TV).",
+  "updatedAt":  "2026-10-26T07:17:10.536663609Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

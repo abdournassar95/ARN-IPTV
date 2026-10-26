@@ -85,6 +85,21 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
+          {/* Android Native Edition Card */}
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white">نسخة أندرويد الأصلية المكتملة (Native Android App)</span>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                  Kotlin + Compose + Media3
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                كود أندرويد أصلي متكامل ومبني في المجلد <code className="text-emerald-400 font-mono">/android</code> جاهز للفتح في Android Studio وبناء ملف الـ APK للهواتف وشاشات التلفاز Android TV.
+              </p>
+            </div>
+          </div>
+
           {/* Keyboard Shortcuts Table */}
           <div className="p-4 rounded-xl bg-[#070b14] border border-white/8 space-y-2.5">
             <div className="flex items-center gap-2 font-bold text-white">

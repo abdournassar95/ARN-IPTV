@@ -1,5 +1,9 @@
 import express from 'express';
 import axios from 'axios';
+import fs from 'fs';
+import * as archiverPkg from 'archiver';
+// @ts-ignore
+const archiver = archiverPkg.default || archiverPkg;
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -912,6 +916,34 @@ export async function startServer(
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'تعذر مزامنة واستيراد حساب Xtream Codes';
       res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 17. Android Native Project ZIP Package Downloader (/api/android/download-zip)
+  app.get('/api/android/download-zip', async (_req, res) => {
+    try {
+      const androidDir = path.join(_dirname, 'android');
+      if (!fs.existsSync(androidDir)) {
+        res.status(404).json({ success: false, error: 'Android directory not found' });
+        return;
+      }
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename="ARN-IPTV-Pro-Android-Kotlin-Project.zip"');
+
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.on('error', (err: any) => {
+        if (!res.headersSent) {
+          res.status(500).send({ error: err?.message || 'Archive error' });
+        }
+      });
+      archive.pipe(res);
+      archive.directory(androidDir, 'ARN-IPTV-Pro-Android');
+      await archive.finalize();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to archive Android project';
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: msg });
+      }
     }
   });
 
